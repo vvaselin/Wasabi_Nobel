@@ -187,7 +187,9 @@ void ScriptManager::executeCommand(Array<String>& order, ExecMode mode, int32 ta
 				chara.changeFlag();
 				Chara tmp = chara;
 				characters.erase(characters.begin() + i);
-				characters.insert(characters.begin() + num, tmp);
+				// erase後はsize が1減るので、numをその範囲内に収める
+				const int32 insertPos = Min(num, static_cast<int32>(characters.size()));
+				characters.insert(characters.begin() + insertPos, tmp);
 				break;
 			}
 			i++;
