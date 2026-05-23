@@ -10,6 +10,7 @@ void InitGame()
 	Scene::Resize(1920, 1080);
 
 	FontAsset::Register(U"TitleFont", 300, Typeface::Heavy);
+	Scene::SetMaxDeltaTime(0.1);
 }
 //ルビ振り用関数
 void DrawTextWithRuby(const Vec2& basePos, const Font& mainFont, const Font& rubyFont, const String& text, const Array<Ruby>& rubyList, double rubyYOffset)

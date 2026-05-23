@@ -29,7 +29,10 @@ bool FadeController::update()
 {
 	if (m_state == FadeState::Idle) return false;
 
-	m_elapsed += Scene::DeltaTime();
+	// シーン遷移直後など DeltaTime が極端に大きい場合に
+	// アニメーションが1フレームで完了するのを防ぐ（10fps以上を想定）
+	const double dt = Min(Scene::DeltaTime(), 0.1);
+	m_elapsed += dt;
 
 	const double dur = durationOf(m_state);
 	const double t = Clamp(m_elapsed / dur, 0.0, 1.0);
