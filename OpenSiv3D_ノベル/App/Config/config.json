@@ -1,0 +1,11 @@
+﻿{
+  "Sound": {
+    "BGM": 0.5,
+    "Master": 1.0,
+    "SE": 0.5
+  },
+  "Text": {
+    "Auto": 0.5,
+    "Message": 0.5
+  }
+}

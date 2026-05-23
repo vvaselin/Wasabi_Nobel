@@ -1,0 +1,274 @@
+# include <Siv3D/Windows/Resource.hpp>
+
+//////////////////////////////////////////////////////
+//
+//	Siv3D Engine Resources (DO NOT REMOVE)
+//
+//////////////////////////////////////////////////////
+DefineResource(100, ICON, icon.ico)
+
+//
+//	Shaders
+//
+Resource(engine/shader/d3d11/sprite.vs)
+Resource(engine/shader/d3d11/shape.ps)
+Resource(engine/shader/d3d11/square_dot.ps)
+Resource(engine/shader/d3d11/round_dot.ps)
+Resource(engine/shader/d3d11/texture.ps)
+Resource(engine/shader/d3d11/bitmapfont.ps)
+Resource(engine/shader/d3d11/sdffont.ps)
+Resource(engine/shader/d3d11/sdffont_outline.ps)
+Resource(engine/shader/d3d11/sdffont_shadow.ps)
+Resource(engine/shader/d3d11/sdffont_outlineshadow.ps)
+Resource(engine/shader/d3d11/msdffont.ps)
+Resource(engine/shader/d3d11/msdffont_outline.ps)
+Resource(engine/shader/d3d11/msdffont_shadow.ps)
+Resource(engine/shader/d3d11/msdffont_outlineshadow.ps)
+Resource(engine/shader/d3d11/msdfprint.ps)
+Resource(engine/shader/d3d11/fullscreen_triangle.vs)
+Resource(engine/shader/d3d11/fullscreen_triangle.ps)
+Resource(engine/shader/d3d11/forward3d.vs)
+Resource(engine/shader/d3d11/line3d.vs)
+Resource(engine/shader/d3d11/forward3d.ps)
+Resource(engine/shader/d3d11/line3d.ps)
+Resource(engine/shader/d3d11/copy.ps)
+Resource(engine/shader/d3d11/gaussian_blur_5.ps)
+Resource(engine/shader/d3d11/gaussian_blur_9.ps)
+Resource(engine/shader/d3d11/gaussian_blur_13.ps)
+Resource(engine/shader/d3d11/apply_srgb_curve.ps)
+Resource(engine/shader/d3d11/quad_warp.vs)
+Resource(engine/shader/d3d11/quad_warp.ps)
+Resource(engine/shader/d3d11/sky.ps)
+Resource(engine/shader/glsl/sprite.vert)
+Resource(engine/shader/glsl/shape.frag)
+Resource(engine/shader/glsl/square_dot.frag)
+Resource(engine/shader/glsl/round_dot.frag)
+Resource(engine/shader/glsl/texture.frag)
+Resource(engine/shader/glsl/bitmapfont.frag)
+Resource(engine/shader/glsl/sdffont.frag)
+Resource(engine/shader/glsl/sdffont_outline.frag)
+Resource(engine/shader/glsl/sdffont_shadow.frag)
+Resource(engine/shader/glsl/sdffont_outlineshadow.frag)
+Resource(engine/shader/glsl/msdffont.frag)
+Resource(engine/shader/glsl/msdffont_outline.frag)
+Resource(engine/shader/glsl/msdffont_shadow.frag)
+Resource(engine/shader/glsl/msdffont_outlineshadow.frag)
+Resource(engine/shader/glsl/msdfprint.frag)
+Resource(engine/shader/glsl/fullscreen_triangle.vert)
+Resource(engine/shader/glsl/fullscreen_triangle.frag)
+Resource(engine/shader/glsl/forward3d.vert)
+Resource(engine/shader/glsl/line3d.vert)
+Resource(engine/shader/glsl/forward3d.frag)
+Resource(engine/shader/glsl/line3d.frag)
+Resource(engine/shader/glsl/copy.frag)
+Resource(engine/shader/glsl/gaussian_blur_5.frag)
+Resource(engine/shader/glsl/gaussian_blur_9.frag)
+Resource(engine/shader/glsl/gaussian_blur_13.frag)
+Resource(engine/shader/glsl/apply_srgb_curve.frag)
+Resource(engine/shader/glsl/quad_warp.vert)
+Resource(engine/shader/glsl/quad_warp.frag)
+Resource(engine/shader/glsl/sky.frag)
+
+//
+//	Fonts
+//
+Resource(engine/font/min/siv3d-min.woff)
+
+//
+//	Box-shadow Textures
+//
+Resource(engine/texture/box-shadow/256.png)
+Resource(engine/texture/box-shadow/128.png)
+Resource(engine/texture/box-shadow/64.png)
+Resource(engine/texture/box-shadow/32.png)
+Resource(engine/texture/box-shadow/16.png)
+Resource(engine/texture/box-shadow/8.png)
+
+//////////////////////////////////////////////////////
+//
+//	Siv3D Engine Optional Resources (Can be removed if not required)
+//
+//////////////////////////////////////////////////////
+
+//
+//	Fonts
+//
+Resource(engine/font/mplus/mplus-1p-thin.ttf.zstdcmp)
+Resource(engine/font/mplus/mplus-1p-light.ttf.zstdcmp)
+Resource(engine/font/mplus/mplus-1p-regular.ttf.zstdcmp)
+Resource(engine/font/mplus/mplus-1p-medium.ttf.zstdcmp)
+Resource(engine/font/mplus/mplus-1p-bold.ttf.zstdcmp)
+Resource(engine/font/mplus/mplus-1p-heavy.ttf.zstdcmp)
+Resource(engine/font/mplus/mplus-1p-black.ttf.zstdcmp)
+Resource(engine/font/noto-cjk/NotoSansCJK-Regular.ttc.zstdcmp)
+
+Resource(example/font/DotGothic16/DotGothic16-Regular.ttf)
+
+//Resource(engine/font/noto-cjk/NotoSansJP-Regular.otf.zstdcmp)
+
+//
+//	Emoji Fonts
+//
+Resource(engine/font/noto-emoji/NotoColorEmoji.ttf.zstdcmp)
+Resource(engine/font/noto-emoji/NotoEmoji-Regular.ttf.zstdcmp)
+
+//
+//	Icons
+//
+Resource(engine/font/fontawesome/fontawesome-brands.otf.zstdcmp)
+Resource(engine/font/fontawesome/fontawesome-solid.otf.zstdcmp)
+Resource(engine/font/materialdesignicons/materialdesignicons-webfont.ttf.zstdcmp)
+
+//
+//	Sound Font
+//
+Resource(engine/soundfont/GMGSx.sf2.zstdcmp)
+
+//////////////////////////////////////////////////////
+//
+//	Siv3D App Resources (Your application resources here)
+//
+//////////////////////////////////////////////////////
+
+//テキストファイル
+Resource(script/Script.txt)
+Resource(クレジット.txt)
+
+//背景
+Resource(background/サ室_明.png)
+Resource(background/サ室_暗.png)
+Resource(background/サ室_夜明け.png)
+Resource(background/図書館_明.png)
+Resource(background/図書館_暗.png)
+Resource(background/精神世界.png)
+Resource(background/夜道_明.png)
+Resource(background/夜道_暗.png)
+Resource(background/バー.png)
+
+
+//UNI
+Resource(uni/おこ.png)
+Resource(uni/キョトン.png)
+Resource(uni/キリッと.png)
+Resource(uni/シリアス.png)
+Resource(uni/スヤァ.png)
+Resource(uni/ドヤ.png)
+Resource(uni/泣き.png)
+Resource(uni/泣きおこ.png)
+Resource(uni/困り.png)
+Resource(uni/焦り.png)
+Resource(uni/青ざめ.png)
+Resource(uni/赤面.png)
+Resource(uni/通常.png)
+
+//YUZU
+Resource(yuzu/通常.png)
+Resource(yuzu/通常2.png)
+Resource(yuzu/通常3.png)
+Resource(yuzu/通常4.png)
+Resource(yuzu/おこ.png)
+Resource(yuzu/ジト目.png)
+Resource(yuzu/スヤア.png)
+Resource(yuzu/困り1.png)
+Resource(yuzu/困り2.png)
+Resource(yuzu/困り3.png)
+Resource(yuzu/困り4.png)
+Resource(yuzu/泣き顔.png)
+Resource(yuzu/泣き顔2.png)
+Resource(yuzu/驚き.png)
+Resource(yuzu/ニッコリ.png)
+
+
+
+//NIUM
+Resource(nium/おこ.png)
+Resource(nium/キリッと.png)
+Resource(nium/スヤァ.png)
+Resource(nium/困り.png)
+Resource(nium/通常.png)
+Resource(nium/微笑み.png)
+
+//DEL
+Resource(del/おこ.png)
+Resource(del/ニヤリ.png)
+Resource(del/通常.png)
+Resource(del/呆れ.png)
+
+//CAT
+Resource(cat/あんぐり.png)
+Resource(cat/キリッと.png)
+Resource(cat/ショボン.png)
+Resource(cat/スヤァ.png)
+Resource(cat/通常.png)
+
+//cg
+Resource(cg/フロッピーディスク.png)
+Resource(cg/フロッピーディスク2.png)
+Resource(cg/覗き込む.png)
+Resource(cg/別れ.png)
+Resource(cg/デスクトップ.png)
+Resource(cg/グリッチ1.png)
+Resource(cg/グリッチ2.png)
+Resource(cg/グリッチ3.png)
+Resource(cg/グリッチ4.png)
+
+
+//bgm
+Resource(bgm/コミカル.mp3)
+Resource(bgm/しっとり.mp3)
+Resource(bgm/テーマ.mp3)
+Resource(bgm/ドタバタ.mp3)
+Resource(bgm/バー.mp3)
+Resource(bgm/不穏1.mp3)
+Resource(bgm/大都会.mp3)
+Resource(bgm/エンディング.mp3)
+
+//se
+Resource(se/マウスオーバー.wav)
+Resource(se/選択.wav)
+Resource(se/ジャン！.mp3)
+Resource(se/ザザッ.wav)
+Resource(se/プイッ.wav)
+Resource(se/プヨン.wav)
+Resource(se/ビシッ.mp3)
+Resource(se/ピューン.mp3)
+Resource(se/ニュッ.mp3)
+Resource(se/ダブルクリック.mp3)
+Resource(se/ガサゴソ.mp3)
+Resource(se/ペラ.mp3)
+Resource(se/ドサッ.mp3)
+Resource(se/ドア.mp3)
+Resource(se/入店.mp3)
+Resource(se/ビラスラップ.mp3)
+Resource(se/キハーダ.mp3)
+Resource(se/しょげる.mp3)
+Resource(se/スイッチ.mp3)
+Resource(se/きらーん.mp3)
+Resource(se/ピピッ.wav)
+Resource(se/ホラーピアノ.mp3)
+Resource(se/軋み.mp3)
+Resource(se/カチャカチャ.mp3)
+Resource(se/ブレーカー.mp3)
+
+
+
+//タイトル
+Resource(タイトル.png)
+
+/* examples 
+
+	//
+	// Define your resource path inside `Resource()` macro.
+	// No double quotation marks and white spaces may appear.
+	//
+	Resource(example/siv3d-kun.png)		// ok
+	Resource(example/windmill.png)		// ok
+	Resource(assets/a b c.txt)			// error: contains white spaces
+	Resource("example/windmill.png")	// error: contains double quotation marks
+
+	//
+	// If your file contains a white space, define the identifier without using Resource() macro.
+	//
+	MYIDENTIFIER_1 FILE "assets/a b c.txt"
+	MYIDENTIFIER_2 FILE "level 1/map.dat"
+*/
