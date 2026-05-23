@@ -75,6 +75,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <BuildStlModules>false</BuildStlModules>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -114,35 +115,6 @@
       <Command>xcopy /I /D /Y "$(OutDir)$(TargetFileName)" "$(ProjectDir)App"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="BackGround.cpp" />
-    <ClCompile Include="BackLog.cpp" />
-    <ClCompile Include="BGMmanager.cpp" />
-    <ClCompile Include="Button.cpp" />
-    <ClCompile Include="CGmanager.cpp" />
-    <ClCompile Include="Chara.cpp" />
-    <ClCompile Include="Common.cpp" />
-    <ClCompile Include="Config.cpp" />
-    <ClCompile Include="Editor.cpp" />
-    <ClCompile Include="EndRoll.cpp" />
-    <ClCompile Include="FadeController.cpp" />
-    <ClCompile Include="Game.cpp" />
-    <ClCompile Include="LineEffect.cpp" />
-    <ClCompile Include="Load.cpp" />
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="MessageBox.cpp" />
-    <ClCompile Include="SasaGUI.cpp" />
-    <ClCompile Include="Save.cpp" />
-    <ClCompile Include="SaveDataBox.cpp" />
-    <ClCompile Include="ScriptManager.cpp" />
-    <ClCompile Include="SelectBox.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="TileButton.cpp" />
-    <ClCompile Include="Title.cpp" />
-  </ItemGroup>
   <ItemGroup>
     <Image Include="App\engine\texture\box-shadow\128.png" />
     <Image Include="App\engine\texture\box-shadow\16.png" />
@@ -347,31 +319,6 @@
     <Xml Include="App\example\xml\test.xml" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BackGround.hpp" />
-    <ClInclude Include="BackLog.hpp" />
-    <ClInclude Include="BGMmanager.hpp" />
-    <ClInclude Include="Button.hpp" />
-    <ClInclude Include="CGmanager.hpp" />
-    <ClInclude Include="Chara.hpp" />
-    <ClInclude Include="Common.hpp" />
-    <ClInclude Include="Config.hpp" />
-    <ClInclude Include="Editor.hpp" />
-    <ClInclude Include="EndRoll.hpp" />
-    <ClInclude Include="FadeController.hpp" />
-    <ClInclude Include="Game.hpp" />
-    <ClInclude Include="LineEffect.hpp" />
-    <ClInclude Include="Load.hpp" />
-    <ClInclude Include="MessageBox.hpp" />
-    <ClInclude Include="SasaGUI.hpp" />
-    <ClInclude Include="Save.hpp" />
-    <ClInclude Include="SaveDataBox.hpp" />
-    <ClInclude Include="ScriptManager.hpp" />
-    <ClInclude Include="SelectBox.hpp" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="TileButton.hpp" />
-    <ClInclude Include="Title.hpp" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="App\example\obj\blacksmith.obj">
       <FileType>Document</FileType>
     </None>
@@ -455,6 +402,59 @@
     <None Include="App\example\shader\hlsl\terrain_normal.hlsl">
       <FileType>Document</FileType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="audio\BGMmanager.cpp" />
+    <ClCompile Include="core\Common.cpp" />
+    <ClCompile Include="core\ScriptManager.cpp" />
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="rendering\BackGround.cpp" />
+    <ClCompile Include="rendering\BackLog.cpp" />
+    <ClCompile Include="rendering\CGmanager.cpp" />
+    <ClCompile Include="rendering\Chara.cpp" />
+    <ClCompile Include="rendering\FadeController.cpp" />
+    <ClCompile Include="rendering\LineEffect.cpp" />
+    <ClCompile Include="scenes\Config.cpp" />
+    <ClCompile Include="scenes\Editor.cpp" />
+    <ClCompile Include="scenes\EndRoll.cpp" />
+    <ClCompile Include="scenes\Game.cpp" />
+    <ClCompile Include="scenes\Load.cpp" />
+    <ClCompile Include="scenes\Save.cpp" />
+    <ClCompile Include="scenes\Title.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="ui\Button.cpp" />
+    <ClCompile Include="ui\MessageBox.cpp" />
+    <ClCompile Include="ui\SasaGUI.cpp" />
+    <ClCompile Include="ui\SaveDataBox.cpp" />
+    <ClCompile Include="ui\SelectBox.cpp" />
+    <ClCompile Include="ui\TileButton.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="audio\BGMmanager.hpp" />
+    <ClInclude Include="core\Common.hpp" />
+    <ClInclude Include="core\ScriptManager.hpp" />
+    <ClInclude Include="rendering\BackGround.hpp" />
+    <ClInclude Include="rendering\BackLog.hpp" />
+    <ClInclude Include="rendering\CGmanager.hpp" />
+    <ClInclude Include="rendering\Chara.hpp" />
+    <ClInclude Include="rendering\FadeController.hpp" />
+    <ClInclude Include="rendering\LineEffect.hpp" />
+    <ClInclude Include="scenes\Config.hpp" />
+    <ClInclude Include="scenes\Editor.hpp" />
+    <ClInclude Include="scenes\EndRoll.hpp" />
+    <ClInclude Include="scenes\Game.hpp" />
+    <ClInclude Include="scenes\Load.hpp" />
+    <ClInclude Include="scenes\Save.hpp" />
+    <ClInclude Include="scenes\Title.hpp" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="ui\Button.hpp" />
+    <ClInclude Include="ui\MessageBox.hpp" />
+    <ClInclude Include="ui\SasaGUI.hpp" />
+    <ClInclude Include="ui\SaveDataBox.hpp" />
+    <ClInclude Include="ui\SelectBox.hpp" />
+    <ClInclude Include="ui\TileButton.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

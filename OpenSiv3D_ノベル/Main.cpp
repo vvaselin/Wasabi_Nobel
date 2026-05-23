@@ -1,9 +1,9 @@
-﻿# include "Common.hpp"
-# include "Title.hpp"
-# include "Game.hpp"
-# include "Save.hpp"
-# include "Load.hpp"
-# include "Config.hpp"
+﻿# include "core/Common.hpp"
+# include "scenes/Title.hpp"
+# include "scenes/Game.hpp"
+# include "scenes/Save.hpp"
+# include "scenes/Load.hpp"
+# include "scenes/Config.hpp"
 
 //メイン関数
 void Main()
