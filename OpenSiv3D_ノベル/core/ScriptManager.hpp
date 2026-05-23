@@ -22,6 +22,8 @@ class ScriptManager
 public:
 	void setFile(const FilePath& f, const size_t& n);
 
+	void startScript();
+
 	void scriptUpdate();
 
 	Array<String> UpdateQuick(const int32& line);
@@ -49,6 +51,13 @@ public:
 	int32 getLine() const; //何行目か
 
 private:
+	// コルーチン本体
+	Co::Task<> runScript();
+	Co::Task<> processDialogueAsync();
+	Co::Task<bool> executeCommandAsync(Array<String>& order);
+
+	std::shared_ptr<Co::ScopedTaskRunner> m_runner;
+
 
 	// === 統合されたコア処理 ===
 

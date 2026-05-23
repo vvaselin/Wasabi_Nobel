@@ -112,3 +112,8 @@ String Chara::getName() const
 {
 	return name;
 }
+
+bool Chara::isAnimating() const
+{
+	return !m_fade.isIdle();
+}

@@ -20,9 +20,9 @@ Game::Game(const InitData& init)
 	b_log.getMessages().clear();
 
 	for (const auto& message : b_log_)
-	{
 		b_log.addMessage(message);
-	}
+
+	s_manager.startScript();
 }
 
 void Game::update()
@@ -51,7 +51,7 @@ void Game::update()
 	else
 	{
 		//スクリプトによる描画
-		s_manager.scriptUpdate();
+		//s_manager.scriptUpdate();
 
 		s_manager.draw(TextWatch, Menue, getData().ms_add, getData().auto_w);
 	}

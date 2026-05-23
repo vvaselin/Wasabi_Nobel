@@ -20,6 +20,8 @@ public:
 
 	String getName() const;
 
+	bool isAnimating() const;
+
 private:
 	String name;
 	double scale = 0.6, scale_before = 0.6;

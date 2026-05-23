@@ -325,6 +325,15 @@ void ScriptManager::processDialogue(ExecMode mode, Array<String>* outLog)
 }
 
 // -------------------------------------------------------
+// 通常再生（コルーチン）
+// -------------------------------------------------------
+void ScriptManager::startScript()
+{
+	m_runner.reset(); // 前回のタスクを停止
+	m_runner = std::make_shared<Co::ScopedTaskRunner>(runScript().runScoped());
+}
+
+// -------------------------------------------------------
 // 通常再生（毎フレーム呼ばれる）
 // -------------------------------------------------------
 void ScriptManager::scriptUpdate()
@@ -532,4 +541,255 @@ void ScriptManager::setSkip(const bool& Flag)
 bool ScriptManager::getSkip() const
 {
 	return Skip_;
+}
+
+Co::Task<> ScriptManager::runScript()
+{
+	while (!End)
+	{
+		skipBlankLines();
+
+		if (messages[scriptLine][0] == atMark)
+		{
+			Array<String> order = messages[scriptLine].split(colon);
+			order[0].pop_front();
+			const bool advance = co_await executeCommandAsync(order);
+			if (advance) ++scriptLine %= messages.size();
+		}
+		else
+		{
+			co_await processDialogueAsync();
+			++scriptLine %= messages.size();
+		}
+	}
+}
+
+Co::Task<> ScriptManager::processDialogueAsync()
+{
+	Array<String> Dialogue = messages[scriptLine].split(colon);
+	if (Dialogue.size() == 1) Dialogue.push_front(U"");
+
+	saveLine = scriptLine;
+	m_box.SwitchON();
+
+	if (Dialogue[1][0] == dot)
+		m_box.addText(Dialogue[1]);
+	else
+		m_box.setText(Dialogue[0], Dialogue[1]);
+
+	Log = Dialogue[0] + Dialogue[1];
+	LogGen = true;
+
+	// クリックで進むまで待機（draw()が入力を処理する）
+	co_await Co::WaitWhile([this] { return m_box.isReading(); });
+}
+
+Co::Task<bool> ScriptManager::executeCommandAsync(Array<String>& order)
+{
+	switch (Orders[order[0]])
+	{
+	case 1: // @new_chara — 即時
+	{
+		bool exist = false;
+		for (auto& chara : characters)
+		{
+			if (chara.judgeName(order[1]))
+			{
+				exist = true;
+				break;
+			}
+		}
+		if (!exist)
+		{
+			const bool visible = (order[5] == U"YES");
+			Vec2 pos = posJudge(order[3]);
+			double scale = scaleJudge(order[4]);
+			characters << Chara(order[1], order[2], pos, scale, visible);
+		}
+		co_return true;
+	}
+
+	case 2: // @change — アニメーション完了まで待機
+	{
+		String portrait = U"NAN";
+		Vec2 pos = Vec2{ 0,0 };
+		double scale = 0.0;
+
+		for (auto& chara : characters)
+		{
+			if (chara.judgeName(order[1]))
+			{
+				for (size_t i = 2; i < order.size(); i++)
+				{
+					if (SerchAsset(chara.getName() + order[i]) != U"NAN")
+						portrait = order[i];
+					else if (posJudge(order[i]) != Vec2{ 0,0 })
+						pos = posJudge(order[i]);
+					else if (scaleJudge(order[i]) != 0.0)
+						scale = scaleJudge(order[i]);
+				}
+				chara.change(portrait, scale, pos);
+				break;
+			}
+		}
+		co_await Co::WaitWhile([this] {
+			return characters.any([](const Chara& c) { return c.isAnimating(); });
+		});
+		co_return true;
+	}
+
+	case 3: // @visible — アニメーション完了まで待機
+	{
+		bool visible = (order[2] == U"YES");
+		for (auto& chara : characters)
+		{
+			if (chara.judgeName(order[1]))
+			{
+				chara.setVisible(visible);
+				break;
+			}
+		}
+		co_await Co::WaitWhile([this] {
+			return characters.any([](const Chara& c) { return c.isAnimating(); });
+		});
+		co_return true;
+	}
+
+	case 4: // @select — 選択されるまで待機
+	{
+		Skip_ = false;
+		saveLine = scriptLine;
+		m_box.SwitchOFF();
+		selecting = true;
+		targets.clear();
+		Array<String> selects;
+		for (size_t i = 1; i <= 2; i++)
+		{
+			Array<String> c_split = messages[scriptLine + i].split(colon);
+			targets << c_split[0];
+			selects << c_split[1];
+		}
+		s_box.setSelects(selects);
+		co_await Co::WaitWhile([this] { return selecting; });
+		co_return false;
+	}
+
+	case 5: // @jump
+	{
+		String goal = landmark + order[1];
+		while (messages[scriptLine] != goal)
+			++scriptLine %= messages.size();
+		co_return true;
+	}
+
+	case 6: // @l_effect
+	{
+		if (order[1] == U"YES")
+		{
+			LFflag = true;
+			l_effect.init();
+		}
+		else
+		{
+			LFflag = false;
+		}
+		co_return true;
+	}
+
+	case 7: // @layer
+	{
+		const int32 num = Parse<int32>(order[2]);
+		int32 i = 0;
+		for (auto& chara : characters)
+		{
+			if (chara.judgeName(order[1]))
+			{
+				chara.changeFlag();
+				Chara tmp = chara;
+				characters.erase(characters.begin() + i);
+				const int32 insertPos = Min(num, static_cast<int32>(characters.size()));
+				characters.insert(characters.begin() + insertPos, tmp);
+				break;
+			}
+			i++;
+		}
+		co_return true;
+	}
+
+	case 8: // @move（未実装）
+	{
+		co_return true;
+	}
+
+	case 9: // @end
+	{
+		bgm.Stop();
+		End = true;
+		co_return true;
+	}
+
+	case 10: // @shake — 揺れが収まるまで待機
+	{
+		shake = true;
+		co_await Co::WaitWhile([this] { return transition.value() > 0.001; });
+		co_return true;
+	}
+
+	case 11: // @bg_image
+	{
+		bg.Change(order[1]);
+		co_return true;
+	}
+
+	case 12: // @camera（未実装）
+	{
+		co_return true;
+	}
+
+	case 13: // @bgm
+	{
+		if (order[1] == U"OFF")
+			bgm.Stop();
+		else
+			bgm.Change(order[1]);
+		co_return true;
+	}
+
+	case 14: // @script
+	{
+		int32 num = 0;
+		if (order.size() > 2 && order[2]) num = Parse<int32>(order[2]);
+		this->setFile(order[1], num);
+		co_return true;
+	}
+
+	case 15: // @se
+	{
+		SE_flag = true;
+		SE_name = order[1];
+		co_return true;
+	}
+
+	case 16: // @cg
+	{
+		if (order[1] == U"OFF")
+			cg.setVisible(false);
+		else
+		{
+			cg.change(order[1]);
+			cg.setVisible(true);
+		}
+		co_return true;
+	}
+
+	case 17: // @movie（未実装）
+	{
+		co_return true;
+	}
+
+	default:
+	{
+		co_return true;
+	}
+	}
 }

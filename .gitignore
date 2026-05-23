@@ -408,7 +408,7 @@ gmon.out
 # Ignore any saved local files
 **/App/AS_DEBUG/
 **/App/Screenshot/
-
+**/App/saveData/
 # Ignore resource files
 #**/App/example
 #**/App/engine

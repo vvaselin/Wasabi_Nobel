@@ -9,6 +9,8 @@ void InitGame()
 	Window::Resize(1024, 576);
 	Scene::Resize(1920, 1080);
 
+	Co::Init();
+
 	FontAsset::Register(U"TitleFont", 300, Typeface::Heavy);
 	Scene::SetMaxDeltaTime(0.1);
 }
