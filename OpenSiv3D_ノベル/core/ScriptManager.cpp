@@ -29,6 +29,49 @@ void ScriptManager::skipBlankLines()
 	}
 }
 
+bool ScriptManager::isWaitToken(const String& s) const
+{
+	return (s == U"wait" || s == U"WAIT" || s == U"Wait");
+}
+
+bool ScriptManager::parseWaitFlag(const Array<String>& order, size_t index, bool defaultWait) const
+{
+	if (order.size() <= index)
+	{
+		return defaultWait;
+	}
+
+	return isWaitToken(order[index]);
+}
+
+Chara* ScriptManager::findChara(const String& name)
+{
+	for (auto& chara : characters)
+	{
+		if (chara.judgeName(name))
+		{
+			return &chara;
+		}
+	}
+
+	return nullptr;
+}
+
+Chara::MovePattern ScriptManager::parseMovePattern(const String& s) const
+{
+	if (s == U"Step") return Chara::MovePattern::Step;
+	if (s == U"Jump") return Chara::MovePattern::Jump;
+	if (s == U"BackLeft") return Chara::MovePattern::BackLeft;
+	if (s == U"BackRight") return Chara::MovePattern::BackRight;
+
+	return Chara::MovePattern::Default;
+}
+
+bool ScriptManager::anyBlockingChara() const
+{
+	return characters.any([](const Chara& c) { return c.isBlocking(); });
+}
+
 // -------------------------------------------------------
 // コマンド実行（統合版）
 // -------------------------------------------------------
@@ -62,6 +105,7 @@ void ScriptManager::executeCommand(Array<String>& order, ExecMode mode, int32 ta
 		String portrait = U"NAN";
 		Vec2 pos = Vec2{ 0,0 };
 		double scale = 0.0;
+		Chara::MovePattern movePattern = Chara::MovePattern::Default;
 
 		for (auto& chara : characters)
 		{
@@ -81,8 +125,24 @@ void ScriptManager::executeCommand(Array<String>& order, ExecMode mode, int32 ta
 					{
 						scale = scaleJudge(order[i]);
 					}
+					else
+					{
+						const Chara::MovePattern parsed = parseMovePattern(order[i]);
+						if (parsed != Chara::MovePattern::Default)
+						{
+							movePattern = parsed;
+						}
+					}
 				}
 				chara.change(portrait, scale, pos);
+				if (mode == ExecMode::Quick)
+				{
+					chara.applyMovePatternImmediate(movePattern);
+				}
+				else
+				{
+					chara.startMove(movePattern, true);
+				}
 				break;
 			}
 		}
@@ -97,6 +157,18 @@ void ScriptManager::executeCommand(Array<String>& order, ExecMode mode, int32 ta
 			if (chara.judgeName(order[1]))
 			{
 				chara.setVisible(visible);
+				if (order.size() >= 4)
+				{
+					const Chara::MovePattern movePattern = parseMovePattern(order[3]);
+					if (mode == ExecMode::Quick)
+					{
+						chara.applyMovePatternImmediate(movePattern);
+					}
+					else
+					{
+						chara.startMove(movePattern, true);
+					}
+				}
 				break;
 			}
 		}
@@ -199,7 +271,18 @@ void ScriptManager::executeCommand(Array<String>& order, ExecMode mode, int32 ta
 
 	case 8: // キャラを動かす（未実装）
 	{
-
+		if (Chara* chara = findChara(order[1]))
+		{
+			const Chara::MovePattern movePattern = parseMovePattern(order[2]);
+			if (mode == ExecMode::Quick)
+			{
+				chara->applyMovePatternImmediate(movePattern);
+			}
+			else
+			{
+				chara->startMove(movePattern, true);
+			}
+		}
 	}
 	break;
 
@@ -213,6 +296,7 @@ void ScriptManager::executeCommand(Array<String>& order, ExecMode mode, int32 ta
 	case 10: // 画面揺れ
 	{
 		shake = true;
+		shakeBlocking = parseWaitFlag(order, 1, true);
 	}
 	break;
 
@@ -283,8 +367,51 @@ void ScriptManager::executeCommand(Array<String>& order, ExecMode mode, int32 ta
 	}
 	break;
 
+	case 18: // 暗転（現状維持: no-op）
+	{
+	}
+	break;
+
+	case 20: // 汎用移動
+	{
+		if (Chara* chara = findChara(order[1]))
+		{
+			const Vec2 to = posJudge(order[2]);
+			const double duration = ParseOr<double>(order[3], 0.5);
+			const bool wait = parseWaitFlag(order, 4, true);
+			if (mode == ExecMode::Quick)
+			{
+				chara->setPositionImmediate(to);
+			}
+			else
+			{
+				chara->moveTo(to, duration, wait);
+			}
+		}
+	}
+	break;
+
+	case 21: // フェードテレポート
+	{
+		if (Chara* chara = findChara(order[1]))
+		{
+			const Vec2 to = posJudge(order[2]);
+			const double duration = ParseOr<double>(order[3], 0.8);
+			const bool wait = parseWaitFlag(order, 4, true);
+			if (mode == ExecMode::Quick)
+			{
+				chara->setPositionImmediate(to);
+			}
+			else
+			{
+				chara->fadeTeleportTo(to, duration, wait);
+			}
+		}
+	}
+	break;
+
 	default:
-		break;
+	break;
 	}
 }
 
@@ -406,6 +533,15 @@ void ScriptManager::draw(const bool& textON, const bool& menue, const double& sp
 	if (const double t = transition.value())
 	{
 		mat = Mat3x2::Translate(RandomVec2(t * 50));
+	}
+	else
+	{
+		shakeBlocking = false;
+	}
+
+	for (auto& chara : characters)
+	{
+		chara.updateMove();
 	}
 
 	{
@@ -614,6 +750,7 @@ Co::Task<bool> ScriptManager::executeCommandAsync(Array<String>& order)
 		String portrait = U"NAN";
 		Vec2 pos = Vec2{ 0,0 };
 		double scale = 0.0;
+		Chara::MovePattern movePattern = Chara::MovePattern::Default;
 
 		for (auto& chara : characters)
 		{
@@ -627,13 +764,22 @@ Co::Task<bool> ScriptManager::executeCommandAsync(Array<String>& order)
 						pos = posJudge(order[i]);
 					else if (scaleJudge(order[i]) != 0.0)
 						scale = scaleJudge(order[i]);
+					else
+					{
+						const Chara::MovePattern parsed = parseMovePattern(order[i]);
+						if (parsed != Chara::MovePattern::Default)
+						{
+							movePattern = parsed;
+						}
+					}
 				}
 				chara.change(portrait, scale, pos);
+				chara.startMove(movePattern, true);
 				break;
 			}
 		}
 		co_await Co::WaitWhile([this] {
-			return characters.any([](const Chara& c) { return c.isAnimating(); });
+			return characters.any([](const Chara& c) { return c.isFading(); }) || anyBlockingChara();
 		});
 		co_return true;
 	}
@@ -646,11 +792,15 @@ Co::Task<bool> ScriptManager::executeCommandAsync(Array<String>& order)
 			if (chara.judgeName(order[1]))
 			{
 				chara.setVisible(visible);
+				if (order.size() >= 4)
+				{
+					chara.startMove(parseMovePattern(order[3]), true);
+				}
 				break;
 			}
 		}
 		co_await Co::WaitWhile([this] {
-			return characters.any([](const Chara& c) { return c.isAnimating(); });
+			return characters.any([](const Chara& c) { return c.isFading(); }) || anyBlockingChara();
 		});
 		co_return true;
 	}
@@ -718,6 +868,11 @@ Co::Task<bool> ScriptManager::executeCommandAsync(Array<String>& order)
 
 	case 8: // @move（未実装）
 	{
+		if (Chara* chara = findChara(order[1]))
+		{
+			chara->startMove(parseMovePattern(order[2]), true);
+		}
+		co_await Co::WaitWhile([this] { return anyBlockingChara(); });
 		co_return true;
 	}
 
@@ -731,7 +886,11 @@ Co::Task<bool> ScriptManager::executeCommandAsync(Array<String>& order)
 	case 10: // @shake — 揺れが収まるまで待機
 	{
 		shake = true;
-		co_await Co::WaitWhile([this] { return transition.value() > 0.001; });
+		shakeBlocking = parseWaitFlag(order, 1, true);
+		if (shakeBlocking)
+		{
+			co_await Co::WaitWhile([this] { return shake || transition.value() > 0.001; });
+		}
 		co_return true;
 	}
 
@@ -784,6 +943,43 @@ Co::Task<bool> ScriptManager::executeCommandAsync(Array<String>& order)
 
 	case 17: // @movie（未実装）
 	{
+		co_return true;
+	}
+
+	case 18: // @blackout（現状維持: no-op）
+	{
+		co_return true;
+	}
+
+	case 20: // @move_to
+	{
+		if (Chara* chara = findChara(order[1]))
+		{
+			const Vec2 to = posJudge(order[2]);
+			const double duration = ParseOr<double>(order[3], 0.5);
+			const bool wait = parseWaitFlag(order, 4, true);
+			chara->moveTo(to, duration, wait);
+			if (wait)
+			{
+				co_await Co::WaitWhile([this] { return anyBlockingChara(); });
+			}
+		}
+		co_return true;
+	}
+
+	case 21: // @fade_teleport
+	{
+		if (Chara* chara = findChara(order[1]))
+		{
+			const Vec2 to = posJudge(order[2]);
+			const double duration = ParseOr<double>(order[3], 0.8);
+			const bool wait = parseWaitFlag(order, 4, true);
+			chara->fadeTeleportTo(to, duration, wait);
+			if (wait)
+			{
+				co_await Co::WaitWhile([this] { return anyBlockingChara(); });
+			}
+		}
 		co_return true;
 	}
 

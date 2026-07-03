@@ -67,6 +67,16 @@ private:
 
 	void processDialogue(ExecMode mode, Array<String>* outLog = nullptr);
 
+	bool isWaitToken(const String& s) const;
+
+	bool parseWaitFlag(const Array<String>& order, size_t index, bool defaultWait = true) const;
+
+	Chara* findChara(const String& name);
+
+	Chara::MovePattern parseMovePattern(const String& s) const;
+
+	bool anyBlockingChara() const;
+
 	// === メンバ変数 ===
 
 	Array<String> messages;
@@ -101,6 +111,9 @@ private:
 		{U"se", 15},
 		{U"cg", 16},
 		{U"movie",17},
+		{U"blackout",18},
+		{U"move_to",20},
+		{U"fade_teleport",21},
 	};
 	const String::value_type atMark{ U'@' };
 	const String::value_type colon{ U':' };
@@ -125,6 +138,7 @@ private:
 
 	Transition transition{ 0.1s, 0.3s };
 	bool shake = false;
+	bool shakeBlocking = false;
 
 	bool Auto_ = false;
 	const double spawnTime = 1.0;

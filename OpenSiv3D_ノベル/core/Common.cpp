@@ -66,17 +66,19 @@ void DrawTextWithRuby(const Vec2& basePos, const Font& mainFont, const Font& rub
 //スクリプト解析用(position)
 Vec2 posJudge(const String& pos)
 {
+	const double footY = Scene::Height() + 520;
+
 	if (pos == U"L")
 	{
-		return  Vec2{ Scene::Width() / 5, 0};
+		return  Vec2{ Scene::Width() / 5, footY };
 	}
 	else if (pos == U"C")
 	{
-		return Vec2{ Scene::Center().x, 0};
+		return Vec2{ Scene::Center().x, footY };
 	}
 	else if (pos == U"R")
 	{
-		return Vec2{ Scene::Width() / 5*4 , 0};
+		return Vec2{ Scene::Width() / 5 * 4, footY };
 	}
 	else
 	{
