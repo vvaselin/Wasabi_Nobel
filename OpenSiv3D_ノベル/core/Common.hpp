@@ -1,6 +1,7 @@
 ﻿#pragma once
 # include <Siv3D.hpp>
 # include <CoTaskLib.hpp>
+# include "core/ScriptConfig.hpp"
 
 // シーンの名前
 enum class State

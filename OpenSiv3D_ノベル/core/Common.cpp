@@ -66,45 +66,13 @@ void DrawTextWithRuby(const Vec2& basePos, const Font& mainFont, const Font& rub
 //スクリプト解析用(position)
 Vec2 posJudge(const String& pos)
 {
-	const double footY = Scene::Height() + 520;
-
-	if (pos == U"L")
-	{
-		return  Vec2{ Scene::Width() / 5, footY };
-	}
-	else if (pos == U"C")
-	{
-		return Vec2{ Scene::Center().x, footY };
-	}
-	else if (pos == U"R")
-	{
-		return Vec2{ Scene::Width() / 5 * 4, footY };
-	}
-	else
-	{
-		return Vec2{ 0,0 };
-	}
+	return GetScriptConfig().positionOf(pos);
 }
 
 //スクリプト解析用(scale)
 double scaleJudge(const String& scale)
 {
-	if (scale == U"大")
-	{
-		return 2;
-	}
-	else if (scale == U"中")
-	{
-		return 0.8;
-	}
-	else if (scale == U"小")
-	{
-		return 0.5;
-	}
-	else
-	{
-		return 0.0;
-	}
+	return GetScriptConfig().scaleOf(scale);
 }
 
 //TextureAssetから探す

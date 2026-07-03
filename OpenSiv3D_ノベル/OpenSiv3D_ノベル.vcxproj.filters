@@ -837,6 +837,9 @@
     <ClCompile Include="core\Common.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="core\ScriptConfig.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
     <ClCompile Include="core\ScriptManager.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
@@ -903,6 +906,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\Common.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\ScriptConfig.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="core\ScriptManager.hpp">

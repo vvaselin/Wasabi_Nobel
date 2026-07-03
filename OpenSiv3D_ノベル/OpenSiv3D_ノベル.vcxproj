@@ -406,6 +406,7 @@
   <ItemGroup>
     <ClCompile Include="audio\BGMmanager.cpp" />
     <ClCompile Include="core\Common.cpp" />
+    <ClCompile Include="core\ScriptConfig.cpp" />
     <ClCompile Include="core\ScriptManager.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="rendering\BackGround.cpp" />
@@ -434,6 +435,7 @@
   <ItemGroup>
     <ClInclude Include="audio\BGMmanager.hpp" />
     <ClInclude Include="core\Common.hpp" />
+    <ClInclude Include="core\ScriptConfig.hpp" />
     <ClInclude Include="core\ScriptManager.hpp" />
     <ClInclude Include="rendering\BackGround.hpp" />
     <ClInclude Include="rendering\BackLog.hpp" />

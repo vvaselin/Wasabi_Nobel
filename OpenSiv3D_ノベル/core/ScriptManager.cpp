@@ -75,66 +75,160 @@ bool ScriptManager::anyBlockingChara() const
 // -------------------------------------------------------
 // コマンド実行（統合版）
 // -------------------------------------------------------
-void ScriptManager::executeCommand(Array<String>& order, ExecMode mode, int32 targetLine)
+Optional<Command> ScriptManager::parseCommandLine(const String& line) const
 {
-	switch (Orders[order[0]])
+	if (line.isEmpty() || line[0] != atMark)
 	{
-	case 1: // キャラの定義
+		return none;
+	}
+
+	Array<String> tokens = line.split(colon);
+	if (tokens.isEmpty())
 	{
-		bool exist = false;
-		for (auto& chara : characters)
+		return none;
+	}
+
+	tokens[0].pop_front();
+
+	Command command;
+	command.name = tokens[0];
+	for (size_t i = 1; i < tokens.size(); ++i)
+	{
+		command.args << tokens[i];
+	}
+
+	return command;
+}
+
+Array<String> ScriptManager::toLegacyOrder(const Command& command) const
+{
+	Array<String> order{ command.name };
+	for (const auto& arg : command.args)
+	{
+		order << arg;
+	}
+	return order;
+}
+
+bool ScriptManager::executeCommand(const Command& command, ExecMode mode, int32 targetLine)
+{
+	if (!Orders.contains(command.name))
+	{
+		Logger << U"[warning] ScriptManager: unknown command: " << command.name;
+		return true;
+	}
+
+	Array<String> order = toLegacyOrder(command);
+
+	switch (Orders[command.name])
+	{
+	case 1: executeNewChara(order); break;
+	case 2: executeChange(order, mode); break;
+	case 3: executeVisible(order, mode); break;
+	case 4: return executeSelect(order, mode, targetLine);
+	case 5: executeJump(order); break;
+	case 6: executeLineEffect(order); break;
+	case 7: executeLayer(order); break;
+	case 8: executeMove(order, mode); break;
+	case 9: executeEnd(); break;
+	case 10: executeShake(order); break;
+	case 11: executeBackground(order); break;
+	case 12: executeCamera(order); break;
+	case 13: executeBGM(order); break;
+	case 14: executeScript(order); break;
+	case 15: executeSE(order, mode, targetLine); break;
+	case 16: executeCG(order); break;
+	case 17: executeMovie(order); break;
+	case 18: executeBlackout(order); break;
+	case 20: executeMoveTo(order, mode); break;
+	case 21: executeFadeTeleport(order, mode); break;
+	default: break;
+	}
+
+	return true;
+}
+
+void ScriptManager::executeNewChara(const Array<String>& order)
+{
+	bool exist = false;
+	for (auto& chara : characters)
+	{
+		if (chara.judgeName(order[1]))
 		{
-			if (chara.judgeName(order[1]))
-			{
-				exist = true;
-				break;
-			}
-		}
-		if (!exist)
-		{
-			const bool visible = (order[5] == U"YES");
-			Vec2 pos = posJudge(order[3]);
-			double scale = scaleJudge(order[4]);
-			characters << Chara(order[1], order[2], pos, scale, visible);
+			exist = true;
+			break;
 		}
 	}
-	break;
 
-	case 2: // 立ち絵の変更
+	if (!exist)
 	{
-		String portrait = U"NAN";
-		Vec2 pos = Vec2{ 0,0 };
-		double scale = 0.0;
-		Chara::MovePattern movePattern = Chara::MovePattern::Default;
+		const bool visible = (order[5] == U"YES");
+		const Vec2 pos = posJudge(order[3]);
+		const double scale = scaleJudge(order[4]);
+		characters << Chara(order[1], order[2], pos, scale, visible);
+	}
+}
 
-		for (auto& chara : characters)
+void ScriptManager::executeChange(const Array<String>& order, ExecMode mode)
+{
+	String portrait = U"NAN";
+	Vec2 pos = Vec2{ 0,0 };
+	double scale = 0.0;
+	Chara::MovePattern movePattern = Chara::MovePattern::Default;
+
+	for (auto& chara : characters)
+	{
+		if (chara.judgeName(order[1]))
 		{
-			if (chara.judgeName(order[1]))
+			for (size_t i = 2; i < order.size(); i++)
 			{
-				for (size_t i = 2; i < order.size(); i++)
+				if (SerchAsset(chara.getName() + order[i]) != U"NAN")
 				{
-					if (SerchAsset(chara.getName() + order[i]) != U"NAN")
+					portrait = order[i];
+				}
+				else if (GetScriptConfig().hasPosition(order[i]))
+				{
+					pos = posJudge(order[i]);
+				}
+				else if (GetScriptConfig().hasScale(order[i]))
+				{
+					scale = scaleJudge(order[i]);
+				}
+				else
+				{
+					const Chara::MovePattern parsed = parseMovePattern(order[i]);
+					if (parsed != Chara::MovePattern::Default)
 					{
-						portrait = order[i];
-					}
-					else if (posJudge(order[i]) != Vec2{ 0,0 })
-					{
-						pos = posJudge(order[i]);
-					}
-					else if (scaleJudge(order[i]) != 0.0)
-					{
-						scale = scaleJudge(order[i]);
-					}
-					else
-					{
-						const Chara::MovePattern parsed = parseMovePattern(order[i]);
-						if (parsed != Chara::MovePattern::Default)
-						{
-							movePattern = parsed;
-						}
+						movePattern = parsed;
 					}
 				}
-				chara.change(portrait, scale, pos);
+			}
+
+			chara.change(portrait, scale, pos);
+			if (mode == ExecMode::Quick)
+			{
+				chara.applyMovePatternImmediate(movePattern);
+			}
+			else
+			{
+				chara.startMove(movePattern, true);
+			}
+			break;
+		}
+	}
+}
+
+void ScriptManager::executeVisible(const Array<String>& order, ExecMode mode)
+{
+	const bool visible = (order[2] == U"YES");
+	for (auto& chara : characters)
+	{
+		if (chara.judgeName(order[1]))
+		{
+			chara.setVisible(visible);
+			if (order.size() >= 4)
+			{
+				const Chara::MovePattern movePattern = parseMovePattern(order[3]);
 				if (mode == ExecMode::Quick)
 				{
 					chara.applyMovePatternImmediate(movePattern);
@@ -143,275 +237,223 @@ void ScriptManager::executeCommand(Array<String>& order, ExecMode mode, int32 ta
 				{
 					chara.startMove(movePattern, true);
 				}
+			}
+			break;
+		}
+	}
+}
+
+bool ScriptManager::executeSelect(const Array<String>&, ExecMode mode, int32 targetLine)
+{
+	if (mode == ExecMode::Quick && static_cast<int32>(scriptLine) != targetLine)
+	{
+		targets.clear();
+		for (size_t i = 1; i <= 2; i++)
+		{
+			Array<String> c_split = messages[scriptLine + i].split(colon);
+			targets << c_split[0];
+		}
+
+		String goal;
+		int32 tmp = targetLine;
+		while (tmp > static_cast<int32>(scriptLine))
+		{
+			if ((messages[tmp] == landmark + targets[0]) || (messages[tmp] == landmark + targets[1]))
+			{
+				goal = messages[tmp];
 				break;
 			}
+			--tmp %= messages.size();
 		}
-	}
-	break;
 
-	case 3: // キャラを表示するか切り替え
-	{
-		bool visible = (order[2] == U"YES");
-		for (auto& chara : characters)
-		{
-			if (chara.judgeName(order[1]))
-			{
-				chara.setVisible(visible);
-				if (order.size() >= 4)
-				{
-					const Chara::MovePattern movePattern = parseMovePattern(order[3]);
-					if (mode == ExecMode::Quick)
-					{
-						chara.applyMovePatternImmediate(movePattern);
-					}
-					else
-					{
-						chara.startMove(movePattern, true);
-					}
-				}
-				break;
-			}
-		}
-	}
-	break;
-
-	case 4: // 選択肢表示
-	{
-		if (mode == ExecMode::Quick && static_cast<int32>(scriptLine) != targetLine)
-		{
-			// Quick: 選択肢を通過済み → どちらの分岐に入ったか推定してジャンプ
-			targets.clear();
-			for (size_t i = 1; i <= 2; i++)
-			{
-				Array<String> c_split = messages[scriptLine + i].split(colon);
-				targets << c_split[0];
-			}
-
-			String goal;
-			int32 tmp = targetLine;
-			while (tmp > static_cast<int32>(scriptLine))
-			{
-				if ((messages[tmp] == landmark + targets[0]) || (messages[tmp] == landmark + targets[1]))
-				{
-					goal = messages[tmp];
-					break;
-				}
-				--tmp %= messages.size();
-			}
-
-			while (messages[scriptLine] != goal)
-			{
-				++scriptLine %= messages.size();
-			}
-		}
-		else
-		{
-			// Normal、またはQuickで復元先がこの行 → 選択肢UIを表示
-			Skip_ = false;
-			saveLine = scriptLine;
-			m_box.SwitchOFF();
-			selecting = true;
-			targets.clear();
-			Array<String> selects;
-			for (size_t i = 1; i <= 2; i++)
-			{
-				Array<String> c_split = messages[scriptLine + i].split(colon);
-				targets << c_split[0];
-				selects << c_split[1];
-			}
-			s_box.setSelects(selects);
-		}
-	}
-	break;
-
-	case 5: // ジャンプ機能
-	{
-		String goal = landmark + order[1];
 		while (messages[scriptLine] != goal)
 		{
 			++scriptLine %= messages.size();
 		}
-	}
-	break;
 
-	case 6: // 集中線
+		return true;
+	}
+
+	Skip_ = false;
+	saveLine = scriptLine;
+	m_box.SwitchOFF();
+	selecting = true;
+	targets.clear();
+	Array<String> selects;
+	for (size_t i = 1; i <= 2; i++)
 	{
-		if (order[1] == U"YES")
+		Array<String> c_split = messages[scriptLine + i].split(colon);
+		targets << c_split[0];
+		selects << c_split[1];
+	}
+	s_box.setSelects(selects);
+
+	return true;
+}
+
+void ScriptManager::executeJump(const Array<String>& order)
+{
+	const String goal = landmark + order[1];
+	while (messages[scriptLine] != goal)
+	{
+		++scriptLine %= messages.size();
+	}
+}
+
+void ScriptManager::executeLineEffect(const Array<String>& order)
+{
+	if (order[1] == U"YES")
+	{
+		LFflag = true;
+		l_effect.init();
+	}
+	else
+	{
+		LFflag = false;
+	}
+}
+
+void ScriptManager::executeLayer(const Array<String>& order)
+{
+	const int32 num = Parse<int32>(order[2]);
+	int32 i = 0;
+	for (auto& chara : characters)
+	{
+		if (chara.judgeName(order[1]))
 		{
-			LFflag = true;
-			l_effect.init();
+			chara.changeFlag();
+			Chara tmp = chara;
+			characters.erase(characters.begin() + i);
+			const int32 insertPos = Min(num, static_cast<int32>(characters.size()));
+			characters.insert(characters.begin() + insertPos, tmp);
+			break;
+		}
+		i++;
+	}
+}
+
+void ScriptManager::executeMove(const Array<String>& order, ExecMode mode)
+{
+	if (Chara* chara = findChara(order[1]))
+	{
+		const Chara::MovePattern movePattern = parseMovePattern(order[2]);
+		if (mode == ExecMode::Quick)
+		{
+			chara->applyMovePatternImmediate(movePattern);
 		}
 		else
 		{
-			LFflag = false;
+			chara->startMove(movePattern, true);
 		}
 	}
-	break;
+}
 
-	case 7: // キャラのレイヤー
-	{
-		const int32 num = Parse<int32>(order[2]);
-		int32 i = 0;
-		for (auto& chara : characters)
-		{
-			if (chara.judgeName(order[1]))
-			{
-				chara.changeFlag();
-				Chara tmp = chara;
-				characters.erase(characters.begin() + i);
-				// erase後はsize が1減るので、numをその範囲内に収める
-				const int32 insertPos = Min(num, static_cast<int32>(characters.size()));
-				characters.insert(characters.begin() + insertPos, tmp);
-				break;
-			}
-			i++;
-		}
-	}
-	break;
+void ScriptManager::executeEnd()
+{
+	bgm.Stop();
+	End = true;
+}
 
-	case 8: // キャラを動かす（未実装）
-	{
-		if (Chara* chara = findChara(order[1]))
-		{
-			const Chara::MovePattern movePattern = parseMovePattern(order[2]);
-			if (mode == ExecMode::Quick)
-			{
-				chara->applyMovePatternImmediate(movePattern);
-			}
-			else
-			{
-				chara->startMove(movePattern, true);
-			}
-		}
-	}
-	break;
+void ScriptManager::executeShake(const Array<String>& order)
+{
+	shake = true;
+	shakeBlocking = parseWaitFlag(order, 1, true);
+}
 
-	case 9: // ゲーム終了
+void ScriptManager::executeBackground(const Array<String>& order)
+{
+	bg.Change(order[1]);
+}
+
+void ScriptManager::executeCamera(const Array<String>&)
+{
+}
+
+void ScriptManager::executeBGM(const Array<String>& order)
+{
+	if (order[1] == U"OFF")
 	{
 		bgm.Stop();
-		End = true;
 	}
-	break;
-
-	case 10: // 画面揺れ
+	else
 	{
-		shake = true;
-		shakeBlocking = parseWaitFlag(order, 1, true);
+		bgm.Change(order[1]);
 	}
-	break;
+}
 
-	case 11: // 背景切り替え
+void ScriptManager::executeScript(const Array<String>& order)
+{
+	int32 num = 0;
+	if (order.size() > 2 && order[2])
 	{
-		bg.Change(order[1]);
+		num = Parse<int32>(order[2]);
 	}
-	break;
+	this->setFile(order[1], num);
+}
 
-	case 12: // カメラ（未実装）
+void ScriptManager::executeSE(const Array<String>& order, ExecMode mode, int32 targetLine)
+{
+	if (mode == ExecMode::Normal || static_cast<int32>(scriptLine) == targetLine)
 	{
-		if (order[1] == U"OFF")
+		SE_flag = true;
+		SE_name = order[1];
+	}
+}
+
+void ScriptManager::executeCG(const Array<String>& order)
+{
+	if (order[1] == U"OFF")
+	{
+		cg.setVisible(false);
+	}
+	else
+	{
+		cg.change(order[1]);
+		cg.setVisible(true);
+	}
+}
+
+void ScriptManager::executeBlackout(const Array<String>&)
+{
+}
+
+void ScriptManager::executeMovie(const Array<String>&)
+{
+}
+
+void ScriptManager::executeMoveTo(const Array<String>& order, ExecMode mode)
+{
+	if (Chara* chara = findChara(order[1]))
+	{
+		const Vec2 to = posJudge(order[2]);
+		const double duration = ParseOr<double>(order[3], 0.5);
+		const bool wait = parseWaitFlag(order, 4, true);
+		if (mode == ExecMode::Quick)
 		{
-
-		}
-	}
-	break;
-
-	case 13: // BGM切り替え
-	{
-		if (order[1] == U"OFF")
-		{
-			bgm.Stop();
-		}
-		else
-		{
-			bgm.Change(order[1]);
-		}
-	}
-	break;
-
-	case 14: // 新しいスクリプト
-	{
-		int32 num = 0;
-		if (order[2]) num = Parse<int32>(order[2]);
-		this->setFile(order[1], num);
-	}
-	break;
-
-	case 15: // 効果音設定
-	{
-		// Quick時は復元先の行でだけ鳴らす
-		if (mode == ExecMode::Normal || static_cast<int32>(scriptLine) == targetLine)
-		{
-			SE_flag = true;
-			SE_name = order[1];
-		}
-	}
-	break;
-
-	case 16: // イベントCG
-	{
-		if (order[1] == U"OFF")
-		{
-			cg.setVisible(false);
+			chara->setPositionImmediate(to);
 		}
 		else
 		{
-			cg.change(order[1]);
-			cg.setVisible(true);
+			chara->moveTo(to, duration, wait);
 		}
 	}
-	break;
+}
 
-	case 17: // ムービー再生（未実装）
+void ScriptManager::executeFadeTeleport(const Array<String>& order, ExecMode mode)
+{
+	if (Chara* chara = findChara(order[1]))
 	{
-
-	}
-	break;
-
-	case 18: // 暗転（現状維持: no-op）
-	{
-	}
-	break;
-
-	case 20: // 汎用移動
-	{
-		if (Chara* chara = findChara(order[1]))
+		const Vec2 to = posJudge(order[2]);
+		const double duration = ParseOr<double>(order[3], 0.8);
+		const bool wait = parseWaitFlag(order, 4, true);
+		if (mode == ExecMode::Quick)
 		{
-			const Vec2 to = posJudge(order[2]);
-			const double duration = ParseOr<double>(order[3], 0.5);
-			const bool wait = parseWaitFlag(order, 4, true);
-			if (mode == ExecMode::Quick)
-			{
-				chara->setPositionImmediate(to);
-			}
-			else
-			{
-				chara->moveTo(to, duration, wait);
-			}
+			chara->setPositionImmediate(to);
 		}
-	}
-	break;
-
-	case 21: // フェードテレポート
-	{
-		if (Chara* chara = findChara(order[1]))
+		else
 		{
-			const Vec2 to = posJudge(order[2]);
-			const double duration = ParseOr<double>(order[3], 0.8);
-			const bool wait = parseWaitFlag(order, 4, true);
-			if (mode == ExecMode::Quick)
-			{
-				chara->setPositionImmediate(to);
-			}
-			else
-			{
-				chara->fadeTeleportTo(to, duration, wait);
-			}
+			chara->fadeTeleportTo(to, duration, wait);
 		}
-	}
-	break;
-
-	default:
-	break;
 	}
 }
 
@@ -473,9 +515,10 @@ void ScriptManager::scriptUpdate()
 
 		if (messages[scriptLine][0] == atMark)
 		{
-			Array<String> order = messages[scriptLine].split(colon);
-			order[0].pop_front();
-			executeCommand(order, ExecMode::Normal);
+			if (const auto command = parseCommandLine(messages[scriptLine]))
+			{
+				executeCommand(*command, ExecMode::Normal);
+			}
 		}
 		else
 		{
@@ -500,9 +543,10 @@ Array<String> ScriptManager::UpdateQuick(const int32& line)
 
 		if (messages[scriptLine][0] == atMark)
 		{
-			Array<String> order = messages[scriptLine].split(colon);
-			order[0].pop_front();
-			executeCommand(order, ExecMode::Quick, line);
+			if (const auto command = parseCommandLine(messages[scriptLine]))
+			{
+				executeCommand(*command, ExecMode::Quick, line);
+			}
 		}
 		else
 		{
@@ -687,9 +731,8 @@ Co::Task<> ScriptManager::runScript()
 
 		if (messages[scriptLine][0] == atMark)
 		{
-			Array<String> order = messages[scriptLine].split(colon);
-			order[0].pop_front();
-			const bool advance = co_await executeCommandAsync(order);
+			const auto command = parseCommandLine(messages[scriptLine]);
+			const bool advance = command ? co_await executeCommandAsync(*command) : true;
 			if (advance) ++scriptLine %= messages.size();
 		}
 		else
@@ -720,272 +763,35 @@ Co::Task<> ScriptManager::processDialogueAsync()
 	co_await Co::WaitWhile([this] { return m_box.isReading(); });
 }
 
-Co::Task<bool> ScriptManager::executeCommandAsync(Array<String>& order)
+Co::Task<bool> ScriptManager::executeCommandAsync(const Command& command)
 {
-	switch (Orders[order[0]])
-	{
-	case 1: // @new_chara — 即時
-	{
-		bool exist = false;
-		for (auto& chara : characters)
-		{
-			if (chara.judgeName(order[1]))
-			{
-				exist = true;
-				break;
-			}
-		}
-		if (!exist)
-		{
-			const bool visible = (order[5] == U"YES");
-			Vec2 pos = posJudge(order[3]);
-			double scale = scaleJudge(order[4]);
-			characters << Chara(order[1], order[2], pos, scale, visible);
-		}
-		co_return true;
-	}
+	const bool advance = executeCommand(command, ExecMode::Normal);
 
-	case 2: // @change — アニメーション完了まで待機
+	if (command.name == U"select")
 	{
-		String portrait = U"NAN";
-		Vec2 pos = Vec2{ 0,0 };
-		double scale = 0.0;
-		Chara::MovePattern movePattern = Chara::MovePattern::Default;
-
-		for (auto& chara : characters)
-		{
-			if (chara.judgeName(order[1]))
-			{
-				for (size_t i = 2; i < order.size(); i++)
-				{
-					if (SerchAsset(chara.getName() + order[i]) != U"NAN")
-						portrait = order[i];
-					else if (posJudge(order[i]) != Vec2{ 0,0 })
-						pos = posJudge(order[i]);
-					else if (scaleJudge(order[i]) != 0.0)
-						scale = scaleJudge(order[i]);
-					else
-					{
-						const Chara::MovePattern parsed = parseMovePattern(order[i]);
-						if (parsed != Chara::MovePattern::Default)
-						{
-							movePattern = parsed;
-						}
-					}
-				}
-				chara.change(portrait, scale, pos);
-				chara.startMove(movePattern, true);
-				break;
-			}
-		}
-		co_await Co::WaitWhile([this] {
-			return characters.any([](const Chara& c) { return c.isFading(); }) || anyBlockingChara();
-		});
-		co_return true;
-	}
-
-	case 3: // @visible — アニメーション完了まで待機
-	{
-		bool visible = (order[2] == U"YES");
-		for (auto& chara : characters)
-		{
-			if (chara.judgeName(order[1]))
-			{
-				chara.setVisible(visible);
-				if (order.size() >= 4)
-				{
-					chara.startMove(parseMovePattern(order[3]), true);
-				}
-				break;
-			}
-		}
-		co_await Co::WaitWhile([this] {
-			return characters.any([](const Chara& c) { return c.isFading(); }) || anyBlockingChara();
-		});
-		co_return true;
-	}
-
-	case 4: // @select — 選択されるまで待機
-	{
-		Skip_ = false;
-		saveLine = scriptLine;
-		m_box.SwitchOFF();
-		selecting = true;
-		targets.clear();
-		Array<String> selects;
-		for (size_t i = 1; i <= 2; i++)
-		{
-			Array<String> c_split = messages[scriptLine + i].split(colon);
-			targets << c_split[0];
-			selects << c_split[1];
-		}
-		s_box.setSelects(selects);
 		co_await Co::WaitWhile([this] { return selecting; });
 		co_return false;
 	}
 
-	case 5: // @jump
+	if (command.name == U"change" || command.name == U"visible")
 	{
-		String goal = landmark + order[1];
-		while (messages[scriptLine] != goal)
-			++scriptLine %= messages.size();
-		co_return true;
+		co_await Co::WaitWhile([this] {
+			return characters.any([](const Chara& c) { return c.isFading(); }) || anyBlockingChara();
+		});
 	}
-
-	case 6: // @l_effect
+	else if (command.name == U"move")
 	{
-		if (order[1] == U"YES")
-		{
-			LFflag = true;
-			l_effect.init();
-		}
-		else
-		{
-			LFflag = false;
-		}
-		co_return true;
-	}
-
-	case 7: // @layer
-	{
-		const int32 num = Parse<int32>(order[2]);
-		int32 i = 0;
-		for (auto& chara : characters)
-		{
-			if (chara.judgeName(order[1]))
-			{
-				chara.changeFlag();
-				Chara tmp = chara;
-				characters.erase(characters.begin() + i);
-				const int32 insertPos = Min(num, static_cast<int32>(characters.size()));
-				characters.insert(characters.begin() + insertPos, tmp);
-				break;
-			}
-			i++;
-		}
-		co_return true;
-	}
-
-	case 8: // @move（未実装）
-	{
-		if (Chara* chara = findChara(order[1]))
-		{
-			chara->startMove(parseMovePattern(order[2]), true);
-		}
 		co_await Co::WaitWhile([this] { return anyBlockingChara(); });
-		co_return true;
+	}
+	else if (command.name == U"shake" && shakeBlocking)
+	{
+		co_await Co::WaitWhile([this] { return shake || transition.value() > 0.001; });
+	}
+	else if ((command.name == U"move_to" || command.name == U"fade_teleport")
+		&& parseWaitFlag(toLegacyOrder(command), 4, true))
+	{
+		co_await Co::WaitWhile([this] { return anyBlockingChara(); });
 	}
 
-	case 9: // @end
-	{
-		bgm.Stop();
-		End = true;
-		co_return true;
-	}
-
-	case 10: // @shake — 揺れが収まるまで待機
-	{
-		shake = true;
-		shakeBlocking = parseWaitFlag(order, 1, true);
-		if (shakeBlocking)
-		{
-			co_await Co::WaitWhile([this] { return shake || transition.value() > 0.001; });
-		}
-		co_return true;
-	}
-
-	case 11: // @bg_image
-	{
-		bg.Change(order[1]);
-		co_return true;
-	}
-
-	case 12: // @camera（未実装）
-	{
-		co_return true;
-	}
-
-	case 13: // @bgm
-	{
-		if (order[1] == U"OFF")
-			bgm.Stop();
-		else
-			bgm.Change(order[1]);
-		co_return true;
-	}
-
-	case 14: // @script
-	{
-		int32 num = 0;
-		if (order.size() > 2 && order[2]) num = Parse<int32>(order[2]);
-		this->setFile(order[1], num);
-		co_return true;
-	}
-
-	case 15: // @se
-	{
-		SE_flag = true;
-		SE_name = order[1];
-		co_return true;
-	}
-
-	case 16: // @cg
-	{
-		if (order[1] == U"OFF")
-			cg.setVisible(false);
-		else
-		{
-			cg.change(order[1]);
-			cg.setVisible(true);
-		}
-		co_return true;
-	}
-
-	case 17: // @movie（未実装）
-	{
-		co_return true;
-	}
-
-	case 18: // @blackout（現状維持: no-op）
-	{
-		co_return true;
-	}
-
-	case 20: // @move_to
-	{
-		if (Chara* chara = findChara(order[1]))
-		{
-			const Vec2 to = posJudge(order[2]);
-			const double duration = ParseOr<double>(order[3], 0.5);
-			const bool wait = parseWaitFlag(order, 4, true);
-			chara->moveTo(to, duration, wait);
-			if (wait)
-			{
-				co_await Co::WaitWhile([this] { return anyBlockingChara(); });
-			}
-		}
-		co_return true;
-	}
-
-	case 21: // @fade_teleport
-	{
-		if (Chara* chara = findChara(order[1]))
-		{
-			const Vec2 to = posJudge(order[2]);
-			const double duration = ParseOr<double>(order[3], 0.8);
-			const bool wait = parseWaitFlag(order, 4, true);
-			chara->fadeTeleportTo(to, duration, wait);
-			if (wait)
-			{
-				co_await Co::WaitWhile([this] { return anyBlockingChara(); });
-			}
-		}
-		co_return true;
-	}
-
-	default:
-	{
-		co_return true;
-	}
-	}
+	co_return advance;
 }

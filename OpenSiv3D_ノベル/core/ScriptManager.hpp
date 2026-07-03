@@ -16,6 +16,12 @@ enum class ExecMode
 	Quick   // 高速再生（セーブ/ロード復元用、副作用を抑制）
 };
 
+struct Command
+{
+	String name;
+	Array<String> args;
+};
+
 //スクリプトの読み込み
 class ScriptManager
 {
@@ -54,7 +60,7 @@ private:
 	// コルーチン本体
 	Co::Task<> runScript();
 	Co::Task<> processDialogueAsync();
-	Co::Task<bool> executeCommandAsync(Array<String>& order);
+	Co::Task<bool> executeCommandAsync(const Command& command);
 
 	std::shared_ptr<Co::ScopedTaskRunner> m_runner;
 
@@ -63,7 +69,32 @@ private:
 
 	void skipBlankLines();
 
-	void executeCommand(Array<String>& order, ExecMode mode, int32 targetLine = -1);
+	Optional<Command> parseCommandLine(const String& line) const;
+
+	Array<String> toLegacyOrder(const Command& command) const;
+
+	bool executeCommand(const Command& command, ExecMode mode, int32 targetLine = -1);
+
+	void executeNewChara(const Array<String>& order);
+	void executeChange(const Array<String>& order, ExecMode mode);
+	void executeVisible(const Array<String>& order, ExecMode mode);
+	bool executeSelect(const Array<String>& order, ExecMode mode, int32 targetLine);
+	void executeJump(const Array<String>& order);
+	void executeLineEffect(const Array<String>& order);
+	void executeLayer(const Array<String>& order);
+	void executeMove(const Array<String>& order, ExecMode mode);
+	void executeEnd();
+	void executeShake(const Array<String>& order);
+	void executeBackground(const Array<String>& order);
+	void executeCamera(const Array<String>& order);
+	void executeBGM(const Array<String>& order);
+	void executeScript(const Array<String>& order);
+	void executeSE(const Array<String>& order, ExecMode mode, int32 targetLine);
+	void executeCG(const Array<String>& order);
+	void executeBlackout(const Array<String>& order);
+	void executeMovie(const Array<String>& order);
+	void executeMoveTo(const Array<String>& order, ExecMode mode);
+	void executeFadeTeleport(const Array<String>& order, ExecMode mode);
 
 	void processDialogue(ExecMode mode, Array<String>* outLog = nullptr);
 
